@@ -18,10 +18,12 @@ def generate_random_date():
 
 def fill_tree(tree):
     # Add some random data to the treeview
-    for i in range(1, 200):
-        name = f"Item {i}"
-        date = generate_random_date()
-        tree.insert(parent='', index=tk.END, values=(i, name, date))
+    rows = execute_query(query3)
+    for row in rows:
+        Amount = row[1]
+        Desc = row[2]
+        Date = row[3]
+        tree.insert(parent='', index=tk.END, values=(Amount, Desc, Date))
 
 
 def create_pie_chart(frame):
@@ -59,11 +61,8 @@ def execute_query(query):
     # Fetch all rows from the result
     rows = cursor.fetchall()
 
-    # Print each row
-    for row in rows:
-        print(row)
-
     cursor.close()
+    return rows
 
 
 load_dotenv()
@@ -83,7 +82,7 @@ mydb = mysql.connector.connect(
 # Queries
 query1 = "SELECT Category, SUM(Amount) FROM Expenses GROUP BY Category;"
 query2 = "SELECT DATE_FORMAT(TransactionDate, '%m-%Y') AS TransactionMonth, SUM(Amount) AS TotalAmount FROM Expenses GROUP BY DATE_FORMAT(TransactionDate, '%m-%Y') ORDER BY TransactionMonth;"
-
+query3 = "SELECT * FROM Expenses;"
 # Execute queries
 execute_query(query1)
 execute_query(query2)
