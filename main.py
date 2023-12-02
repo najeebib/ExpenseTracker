@@ -9,6 +9,7 @@ from tkinter import simpledialog
 
 
 def fill_tree():
+    # create the treewidget to display all expenses/clear the tree in order to display it again after a new expense was added
     tree = ttk.Treeview(frame1, columns=('Category', 'Amount', 'Date'), show='headings')
     tree.heading("Category", text="Category")
     tree.heading("Amount", text="Amount")
@@ -18,11 +19,10 @@ def fill_tree():
     tree.column("Date", width=100)
 
     tree.grid(row=2, column=0, sticky="nsew")
-
-    # Add some random data to the treeview
+    # get all the expenses from db
     query3 = "SELECT * FROM expenses;"
-
-    rows = execute_query(query3)
+    rows = getFromDB(query3)
+    # put the expenses on the table
     for row in rows:
         Amount = row[1]
         Desc = row[2]
@@ -31,17 +31,19 @@ def fill_tree():
 
 
 def create_pie_chart(frame):
+    # update the chart after new expense added
     for widget in frame.winfo_children():
         widget.destroy()
+    # get the sum of each category
     query1 = "SELECT Category, SUM(Amount) FROM Expenses GROUP BY Category;"
-    data = execute_query(query1)
+    data = getFromDB(query1)
     sumOfAmount = []
     categories = []
     for tup in data:
         value1, value2 = tup  # Unpack the tuple into two values
         categories.append(value1)  # Append the first value to array1
         sumOfAmount.append(value2)  # Append the second value to array2
-
+    # display data on chart
     fig = Figure(figsize=(frame.winfo_width() / 100, frame.winfo_height() / 100), dpi=100)
     pie_chart = fig.add_subplot(111)
 
@@ -58,16 +60,19 @@ def create_pie_chart(frame):
 
 # Function to create the bar series
 def create_bar_series(frame):
+    # update the chart after new expense added
     for widget in frame.winfo_children():
         widget.destroy()
+    # get how much was spent on each month
     query2 = "SELECT DATE_FORMAT(TransactionDate, '%m-%Y') AS TransactionMonth, SUM(Amount) AS TotalAmount FROM Expenses GROUP BY DATE_FORMAT(TransactionDate, '%m-%Y') ORDER BY TransactionMonth;"
-    data = execute_query(query2)
+    data = getFromDB(query2)
     amount = []
     categories = []
     for tup in data:
         value1, value2 = tup  # Unpack the tuple into two values
         categories.append(value1)  # Append the first value to array1
         amount.append(value2)  # Append the second value to array2
+    # display the data on chart
     fig = Figure(figsize=(frame.winfo_width() / 100, frame.winfo_height() / 100), dpi=100)
     bar_series = fig.add_subplot(111)
     bar_series.bar(categories, amount)
@@ -76,7 +81,8 @@ def create_bar_series(frame):
     canvas.get_tk_widget().pack(expand=True, fill=tk.BOTH)
 
 
-def execute_query(query):
+def getFromDB(query):
+    # execute the query that gets data from db
     cursor = mydb.cursor()
     cursor.execute(query)
 
@@ -86,6 +92,7 @@ def execute_query(query):
     cursor.close()
     return rows
 def insertToDB(query, values):
+    # execute query that adds data to db
     cursor = mydb.cursor()
     cursor.execute(query, values)
     cursor.close()
@@ -93,12 +100,13 @@ def insertToDB(query, values):
 
 
 def button_clicked():
+    # ask user for the expense data
     amount = simpledialog.askinteger("Amount","Enter the amount")
     category = simpledialog.askstring("Category", "Enter the category")
     date = simpledialog.askstring("Date", "Enter the date in YYYY-MM-DD format")
     insert_query = "INSERT INTO expenses (Amount, Category, TransactionDate) VALUES (%s, %s, %s);"
     values = (amount, category, date)
-
+    # insert the expense to db
     try:
         insertToDB(insert_query, values)
         create_pie_chart(sub_frame_1)
@@ -113,12 +121,12 @@ def button_clicked():
 
 
 load_dotenv()
-
+# get the mysql connection parameters from .env file
 host = os.getenv('DB_HOST')
 user = os.getenv('DB_USER')
 pas = os.getenv('DB_PASSWORD')
 db = os.getenv('DB_DATABASE')
-
+# make a mysql connection
 mydb = mysql.connector.connect(
     host=host,
     user=user,
@@ -126,12 +134,10 @@ mydb = mysql.connector.connect(
     database=db,
 )
 
-# Queries
-# Execute queries
 
 window = tk.Tk()
 window.geometry('1600x800')
-
+# configure the window and frame grid
 window.grid_rowconfigure(0, weight=1)
 window.grid_columnconfigure(0, weight=30)
 window.grid_columnconfigure(1, weight=70)
