@@ -5,10 +5,23 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import mysql.connector
 import os
 from dotenv import load_dotenv
+from tkinter import simpledialog
 
 
-def fill_tree(tree):
+def fill_tree():
+    tree = ttk.Treeview(frame1, columns=('Category', 'Amount', 'Date'), show='headings')
+    tree.heading("Category", text="Category")
+    tree.heading("Amount", text="Amount")
+    tree.heading("Date", text="Date")
+    tree.column("Category", width=100)
+    tree.column("Amount", width=100)
+    tree.column("Date", width=100)
+
+    tree.grid(row=2, column=0, sticky="nsew")
+
     # Add some random data to the treeview
+    query3 = "SELECT * FROM expenses;"
+
     rows = execute_query(query3)
     for row in rows:
         Amount = row[1]
@@ -72,11 +85,30 @@ def execute_query(query):
 
     cursor.close()
     return rows
+def insertToDB(query, values):
+    cursor = mydb.cursor()
+    cursor.execute(query, values)
+    cursor.close()
+    mydb.commit()  # Commit changes to the database if necessary
 
 
 def button_clicked():
+    amount = simpledialog.askinteger("Amount","Enter the amount")
+    category = simpledialog.askstring("Category", "Enter the category")
+    date = simpledialog.askstring("Date", "Enter the date in YYYY-MM-DD format")
+    insert_query = "INSERT INTO expenses (Amount, Category, TransactionDate) VALUES (%s, %s, %s);"
+    values = (amount, category, date)
+
+    try:
+        insertToDB(insert_query, values)
+        create_pie_chart(sub_frame_1)
+        create_bar_series(sub_frame_2)
+        fill_tree()
+    except Exception as e:
+        print("Error:", e)
     create_pie_chart(sub_frame_1)
     create_bar_series(sub_frame_2)
+    fill_tree()
 
 
 
@@ -95,8 +127,6 @@ mydb = mysql.connector.connect(
 )
 
 # Queries
-
-query3 = "SELECT * FROM Expenses;"
 # Execute queries
 
 window = tk.Tk()
@@ -119,16 +149,7 @@ label.grid(row=0, column=0)
 button = tk.Button(frame1, text="Add Expense", command=button_clicked, width=10)
 button.grid(row=1, column=0, padx=10, pady=5, columnspan=2)
 
-tree = ttk.Treeview(frame1, columns=('Category', 'Amount', 'Date'), show='headings')
-tree.heading("Category", text="Category")
-tree.heading("Amount", text="Amount")
-tree.heading("Date", text="Date")
-tree.column("Category", width=100)
-tree.column("Amount", width=100)
-tree.column("Date", width=100)
-
-tree.grid(row=2, column=0, sticky="nsew")
-fill_tree(tree)
+fill_tree()
 
 frame2 = tk.Frame(window)
 frame2.grid(row=0, column=1, sticky="nsew")
